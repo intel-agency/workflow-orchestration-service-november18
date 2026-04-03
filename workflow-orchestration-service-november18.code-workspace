@@ -15,6 +15,7 @@
 		],
 		"python.analysis.typeCheckingMode": "off",
 		"markdown.validate.enabled": true,
-		"powershell.cwd": "workflow-orchestration-service-november18"
+		"powershell.cwd": "workflow-orchestration-service-november18",
+		"python.defaultInterpreterPath": "d:\\src\\github\\nam20485\\dynamic_workflows\\workflow-orchestration-service-november18\\.venv\\Scripts\\python.exe"
 	}
 }
