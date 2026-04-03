@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "gh": true
+    },
+    "chat.mcp.toolApproval": {
+        "sequential-thinking": "allow",
+        "memory": "allow"
+    },
+    "github-actions.workflows.pinned.workflows": [
+        ".github/workflows/orchestrator-agent.yml"
+    ]
+}

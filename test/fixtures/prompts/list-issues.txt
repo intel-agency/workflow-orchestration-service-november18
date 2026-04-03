@@ -1,0 +1,1 @@
+List the open issues in this repository. For each issue, show the issue number, title, labels, and creation date. Summarize patterns you see (e.g. common labels, stale issues, blocked items).

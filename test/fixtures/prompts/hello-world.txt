@@ -1,0 +1,1 @@
+Say hello and confirm you are operational. Report: your agent name, the model you are using, and the working directory.

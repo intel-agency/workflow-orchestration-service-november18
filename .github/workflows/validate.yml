@@ -1,0 +1,84 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# validate ALL changes/dont skip any revisions, even if a newer one is pushed
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true    
+
+jobs:
+  lint:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Install dev tools
+        shell: pwsh
+        run: ./scripts/install-dev-tools.ps1
+
+      - name: Lint
+        shell: pwsh
+        run: ./scripts/validate.ps1 -Lint
+
+  scan:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Install dev tools
+        shell: pwsh
+        run: ./scripts/install-dev-tools.ps1
+
+      - name: Scan for secrets
+        shell: pwsh
+        run: ./scripts/validate.ps1 -Scan
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install dev tools
+        shell: pwsh
+        run: ./scripts/install-dev-tools.ps1
+
+      - name: Run tests
+        shell: pwsh
+        run: ./scripts/validate.ps1 -Test
+
+      - name: Upload Pester results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pester-test-results-${{ matrix.os }}
+          path: test-results-pester.xml
+          if-no-files-found: ignore
+
+  # test-devcontainer-build: disabled — Dockerfile and prebuild workflows are
+  # moving to a dedicated external prebuild repo. Re-enable once migrated.
+  # test-devcontainer-build:
