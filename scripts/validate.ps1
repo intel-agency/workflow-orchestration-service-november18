@@ -90,15 +90,15 @@ if ($Lint) {
     else { Skip-Check 'actionlint' 'Not installed (go install github.com/rhysd/actionlint/cmd/actionlint@latest)' }
 
     # hadolint — Dockerfile linter
-    $dockerfile = '.github/.devcontainer/Dockerfile'
+    $dockerfiles = @('.github/.devcontainer/Dockerfile', 'server/Dockerfile') | Where-Object { Test-Path $_ }
     if (Get-Command hadolint -ErrorAction SilentlyContinue) {
-        if (Test-Path $dockerfile) {
+        if ($dockerfiles.Count -gt 0) {
             Invoke-Check 'hadolint' {
-                $output = hadolint $dockerfile 2>&1
+                $output = hadolint @dockerfiles 2>&1
                 if ($LASTEXITCODE -ne 0) { throw ($output -join "`n") }
             }
         }
-        else { Skip-Check 'hadolint' "Dockerfile not found at $dockerfile" }
+        else { Skip-Check 'hadolint' 'No Dockerfiles found' }
     }
     else { Skip-Check 'hadolint' 'Not installed (scoop install hadolint / choco install hadolint)' }
 
@@ -106,6 +106,7 @@ if ($Lint) {
     $shellFiles = @()
     if (Test-Path 'test/*.sh') { $shellFiles += Get-Item test/*.sh }
     if (Test-Path 'run_opencode_prompt.sh') { $shellFiles += Get-Item run_opencode_prompt.sh }
+    if (Test-Path 'scripts/start-opencode-server.sh') { $shellFiles += Get-Item scripts/start-opencode-server.sh }
     if (Get-Command shellcheck -ErrorAction SilentlyContinue) {
         if ($shellFiles.Count -gt 0) {
             Invoke-Check 'shellcheck' {
@@ -229,6 +230,16 @@ if ($Test) {
                 }
             }
             else { Skip-Check 'watchdog-io-detection tests' 'Linux-only test (requires /proc filesystem and grep -P)' }
+        }
+        if (Test-Path 'test/test-server-image.sh') {
+            if (Get-Command docker -ErrorAction SilentlyContinue) {
+                Invoke-Check 'server-image smoke test' {
+                    $output = bash test/test-server-image.sh 2>&1
+                    if ($LASTEXITCODE -ne 0) { throw ($output -join "`n") }
+                    Write-Host ($output -join "`n")
+                }
+            }
+            else { Skip-Check 'server-image smoke test' 'Docker not available' }
         }
     }
     else { Skip-Check 'bash tests' 'bash not available on this system' }
