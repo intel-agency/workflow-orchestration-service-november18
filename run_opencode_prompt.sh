@@ -198,6 +198,23 @@ echo "Output log: $OUTPUT_LOG"
 echo "Server log: $SERVER_LOG"
 echo "Server PID file: $SERVER_PIDFILE (monitored for process I/O activity)"
 
+# Install a cleanup trap so that SIGTERM / INT / HUP delivered by the
+# dispatcher's process-group kill triggers an orderly teardown of all
+# background jobs before the script exits.  This runs on the graceful
+# SIGTERM path; the SIGKILL escalation kills the entire process group
+# atomically without reaching this handler.
+_dispatcher_cleanup() {
+    [[ -n "${OPENCODE_PID:-}"        ]] && kill "$OPENCODE_PID"        2>/dev/null || true
+    [[ -n "${OUTPUT_TAIL_RAW_PID:-}" ]] && kill "$OUTPUT_TAIL_RAW_PID" 2>/dev/null || true
+    [[ -n "${TAIL_PID:-}"            ]] && kill "$TAIL_PID"            2>/dev/null || true
+    [[ -n "${SERVER_TAIL_RAW_PID:-}" ]] && kill "$SERVER_TAIL_RAW_PID" 2>/dev/null || true
+    [[ -n "${SERVER_TAIL_PID:-}"     ]] && kill "$SERVER_TAIL_PID"     2>/dev/null || true
+    jobs -p | xargs -r kill 2>/dev/null || true
+    wait 2>/dev/null || true
+    exit 1
+}
+trap '_dispatcher_cleanup' TERM INT HUP
+
 set +e
 
 # Start opencode with output redirected to a log file
