@@ -45,6 +45,15 @@ class OrchestrationEvent(BaseModel):
     raw_payload: dict
     """Complete webhook JSON payload used for __EVENT_DATA__ injection."""
 
+    raw_payload_str: str = Field(default="")
+    """Original raw JSON string of the webhook payload; written verbatim into the prompt.
+
+    When populated (via ``from_webhook_payload``), the assembler uses this string
+    directly so whitespace and Unicode characters are preserved exactly — matching
+    the behaviour of ``echo "$EVENT_JSON"`` in the shell script.  Falls back to
+    ``json.dumps(raw_payload)`` when empty.
+    """
+
     worktree_slug: str = Field(default="")
     """Resolved worktree slug; computed by WorktreeManager before dispatch."""
 
@@ -68,6 +77,7 @@ class OrchestrationEvent(BaseModel):
         *,
         event_type: str = "issues",
         triggered_label: str = "",
+        raw_payload_str: str = "",
     ) -> "OrchestrationEvent":
         """Construct an OrchestrationEvent from a raw GitHub webhook payload dict.
 
@@ -81,6 +91,11 @@ class OrchestrationEvent(BaseModel):
             event_type: Value of the ``X-GitHub-Event`` request header (e.g. ``'issues'``).
             triggered_label: The label that caused this event; falls back to
                 ``payload['label']['name']`` for ``labeled`` actions when not given.
+            raw_payload_str: The original JSON string that was parsed into ``payload``.
+                When provided, the prompt assembler writes this string verbatim into
+                the fenced code block — preserving whitespace and Unicode exactly as
+                the shell script's ``echo "$EVENT_JSON"`` would.  Leave empty to fall
+                back to ``json.dumps(payload)``.
         """
         issue = payload.get("issue", {})
         repository = payload.get("repository", {})
@@ -107,4 +122,5 @@ class OrchestrationEvent(BaseModel):
             title=issue.get("title", ""),
             body=issue.get("body"),
             raw_payload=payload,
+            raw_payload_str=raw_payload_str,
         )

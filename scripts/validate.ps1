@@ -195,6 +195,18 @@ if ($Scan) {
 if ($Test) {
     $script:Modes += 'test'
 
+    # Python unit tests (pytest via uv)
+    if (Get-Command uv -ErrorAction SilentlyContinue) {
+        Invoke-Check 'pytest' {
+            $output = uv sync --dev 2>&1
+            if ($LASTEXITCODE -ne 0) { throw ($output -join "`n") }
+            $output = uv run pytest test/ -v 2>&1
+            if ($LASTEXITCODE -ne 0) { throw ($output -join "`n") }
+            Write-Host ($output -join "`n")
+        }
+    }
+    else { Skip-Check 'pytest' 'uv not installed (see https://docs.astral.sh/uv/getting-started/installation/)' }
+
     # Pester tests
     Invoke-Check 'Pester tests' {
         if (-not (Get-Module -ListAvailable Pester | Where-Object { $_.Version -ge '5.0.0' })) {
