@@ -15,6 +15,6 @@
 		],
 		"python.analysis.typeCheckingMode": "off",
 		"markdown.validate.enabled": true,
-		"powershell.cwd": "ai-new-workflow-app-template"
+		"powershell.cwd": "workflow-orchestration-service-november18"
 	}
 }

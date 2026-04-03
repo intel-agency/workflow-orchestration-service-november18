@@ -110,7 +110,7 @@ Convert in dependency order (low → high complexity):
 
 ## Implementation Status
 
-**PR**: [#9](https://github.com/intel-agency/ai-new-workflow-app-template/pull/9)
+**PR**: [#9](https://github.com/intel-agency/workflow-orchestration-service-november18/pull/9)
 
 ### Scripts Delivered (12/12)
 

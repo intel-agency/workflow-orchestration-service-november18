@@ -17,7 +17,7 @@ scope: repository
 
   <template_usage>
     <summary>
-      This repository is a **GitHub template repo** (`intel-agency/ai-new-workflow-app-template`).
+      This repository is a **project instance** cloned from the `intel-agency/ai-new-workflow-app-template` GitHub template (`intel-agency/workflow-orchestration-service-november18`).
       New project repositories are created from it using automation scripts in the
       `nam20485/workflow-launch2` repo. The scripts clone this template, seed plan docs,
       replace template placeholders, and push — producing a ready-to-go AI-orchestrated repo.
@@ -30,19 +30,19 @@ scope: repository
     <creation_workflow>
       <step>1. Run `./scripts/create-repo-from-slug.ps1 -Slug &lt;project-slug&gt; -Yes` from the `workflow-launch2` repo.</step>
       <step>2. That delegates to `./scripts/create-repo-with-plan-docs.ps1` which:
-        - Creates a new GitHub repo from this template via `gh repo create --template intel-agency/ai-new-workflow-app-template`
+        - Creates a new GitHub repo from this template via `gh repo create --template intel-agency/workflow-orchestration-service-november18`
         - Generates a random suffix for the repo name (e.g., `project-slug-bravo84`)
         - Creates repo secrets (`ZHIPU_API_KEY`, `KIMI_CODE_ORCHESTRATOR_AGENT_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GH_ORCHESTRATION_AGENT_TOKEN`)
         - Clones the new repo locally
         - Copies plan docs from `./plan_docs/&lt;slug&gt;/` into the clone's `plan_docs/` directory
-        - Replaces all template placeholders (`ai-new-workflow-app-template` → new repo name, `intel-agency` → new owner)
+        - Replaces all template placeholders (`workflow-orchestration-service-november18` → new repo name, `intel-agency` → new owner)
         - Commits and pushes the seeded repo
       </step>
       <step>3. On push, the clone's `validate` workflow runs CI (lint, scan, tests). The prebuilt devcontainer image is sourced from the external `intel-agency/workflow-orchestration-prebuild` repo — no `publish-docker` or `prebuild-devcontainer` workflows exist in this template repo.</step>
     </creation_workflow>
 
     <template_design_constraints>
-      <rule>Template placeholders (`ai-new-workflow-app-template`, `intel-agency`) in file contents and paths are replaced by the creation script. Keep them consistent.</rule>
+      <rule>Template placeholders (`workflow-orchestration-service-november18`, `intel-agency`) in file contents and paths are replaced by the creation script. Keep them consistent.</rule>
       <rule>The `plan_docs/` directory contains external-generated documents seeded at clone time. Exclude it from strict linting (markdown lint, etc.).</rule>
       <rule>The consumer `.devcontainer/devcontainer.json` references the prebuilt GHCR image from `intel-agency/workflow-orchestration-prebuild`. The Dockerfile and prebuild pipeline live in that external repo, not here.</rule>
     </template_design_constraints>

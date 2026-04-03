@@ -9,7 +9,7 @@
 
 ## 1. Overview
 
-This document defines the comprehensive development plan for Feature F1: migrating all orchestration-related code from the template repository (`intel-agency/ai-new-workflow-app-template`) to a dedicated prebuild container repository (`intel-agency/workflow-orchestration-prebuild`).
+This document defines the comprehensive development plan for Feature F1: migrating all orchestration-related code from the template repository (`intel-agency/workflow-orchestration-service-november18`) to a dedicated prebuild container repository (`intel-agency/workflow-orchestration-prebuild`).
 
 ### Goal
 
@@ -98,7 +98,7 @@ When running inside the devcontainer via `devcontainers/ci`, stdout/stderr from 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    TEMPLATE REPO (ai-new-workflow-app-template)             │
+│                    TEMPLATE REPO (workflow-orchestration-service-november18)             │
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │ APPLICATION-LEVEL (stays)                                           │   │
@@ -130,7 +130,7 @@ When running inside the devcontainer via `devcontainers/ci`, stdout/stderr from 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    TEMPLATE REPO (ai-new-workflow-app-template)             │
+│                    TEMPLATE REPO (workflow-orchestration-service-november18)             │
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
 │  │ APPLICATION-LEVEL ONLY                                              │   │
@@ -564,7 +564,7 @@ GitHub App Webhook → Self-hosted Service → Prebuild Image → opencode run
 
 | Requirement | Details |
 |-------------|---------|
-| Verify replacement logic | `create-repo-with-plan-docs.ps1` currently replaces `ai-new-workflow-app-template` |
+| Verify replacement logic | `create-repo-with-plan-docs.ps1` currently replaces `workflow-orchestration-service-november18` |
 | Prebuild image URL unaffected | Consumer `devcontainer.json` references `workflow-orchestration-prebuild` — should be unaffected |
 | Test placeholder replacement | Create test clone and verify all placeholders resolved correctly |
 
@@ -686,7 +686,7 @@ F1 is **DONE** when:
 |----------|-----|
 | devcontainers/ci Quick Start | https://github.com/devcontainers/ci#quick-start |
 | Prebuild Repo | https://github.com/intel-agency/workflow-orchestration-prebuild |
-| Template Repo | https://github.com/intel-agency/ai-new-workflow-app-template |
+| Template Repo | https://github.com/intel-agency/workflow-orchestration-service-november18 |
 
 ---
 

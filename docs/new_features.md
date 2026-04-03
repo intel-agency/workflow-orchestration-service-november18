@@ -85,7 +85,7 @@ The prebuild repo (`intel-agency/workflow-orchestration-prebuild`) already exist
 - Consumer `devcontainer.json` image URL must not change (or all existing clones break).
 - `start-opencode-server.sh` must be available inside the prebuild container at a known path.
 - The prebuild repo must publish both `main-latest` (stable) and versioned tags for pinning.
-- Template placeholder replacement in `create-repo-with-plan-docs.ps1` must be verified — it currently replaces `ai-new-workflow-app-template` in file contents; the consumer `devcontainer.json` image URL references `workflow-orchestration-prebuild` so it should be unaffected, but this needs confirmation.
+- Template placeholder replacement in `create-repo-with-plan-docs.ps1` must be verified — it currently replaces `workflow-orchestration-service-november18` in file contents; the consumer `devcontainer.json` image URL references `workflow-orchestration-prebuild` so it should be unaffected, but this needs confirmation.
 
 #### Immediate Issues
 

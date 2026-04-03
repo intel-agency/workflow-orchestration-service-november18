@@ -3,7 +3,7 @@
 > **Date:** 2026-03-26  
 > **Scope:** Two non-idle orchestrator failures called out as exceptions in `docs/idle-timeout-forensic-report.md`  
 > **Affected targets:**
-> - `intel-agency/ai-new-workflow-app-template` run `23415797162` (2026-03-23)
+> - `intel-agency/workflow-orchestration-service-november18` run `23415797162` (2026-03-23)
 > - `intel-agency/workflow-orchestration-queue-quebec50` run `23530174003` (2026-03-25)  
 > **Pattern confirmed:** Yes — both are **configuration / invariant mismatches**, not runtime orchestration stalls
 
@@ -26,7 +26,7 @@ So the two incidents are unrelated to the idle-timeout pattern, but they are rel
 
 | # | Repo | Run ID | Date (UTC) | Failure Class | Immediate Error | Why It Looked Illogical |
 |---|------|--------|------------|---------------|-----------------|-------------------------|
-| 1 | `intel-agency/ai-new-workflow-app-template` | `23415797162` | 2026-03-23 00:07 | Token validation failure | `GH_ORCHESTRATION_AGENT_TOKEN is missing required scopes: read:org` | Same-repo run rejected a narrower-but-usable token path instead of falling back to `GITHUB_TOKEN` |
+| 1 | `intel-agency/workflow-orchestration-service-november18` | `23415797162` | 2026-03-23 00:07 | Token validation failure | `GH_ORCHESTRATION_AGENT_TOKEN is missing required scopes: read:org` | Same-repo run rejected a narrower-but-usable token path instead of falling back to `GITHUB_TOKEN` |
 | 2 | `intel-agency/workflow-orchestration-queue-quebec50` | `23530174003` | 2026-03-25 07:39 | Image bootstrap mismatch | `Devcontainer image not found: ghcr.io/intel-agency/workflow-orchestration-queue-quebec50/devcontainer:main-latest` | Repo config pointed to shared prebuild image, but workflow checked a nonexistent per-repo image and suggested nonexistent workflows |
 
 ### 2.2 Template Repo Token Failure — Observed Evidence
@@ -358,7 +358,7 @@ These cannot both be the correct invariant for the same repo.
 
 ### 6.3 Sources Consulted
 
-- Workflow run `23415797162` logs (`intel-agency/ai-new-workflow-app-template`)
+- Workflow run `23415797162` logs (`intel-agency/workflow-orchestration-service-november18`)
 - Workflow run `23530174003` logs (`intel-agency/workflow-orchestration-queue-quebec50`)
 - `run_opencode_prompt.sh`
 - Historical template workflow at commit `c0f799e0a3d271479e62ff4df5bff305598e1361`:
