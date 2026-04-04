@@ -181,6 +181,14 @@ class Sentinel:
                     triggered_label = priority_label
                     break
 
+            if not triggered_label:
+                logger.debug(
+                    "Issue #%d in %s has no matching priority label — skipping",
+                    item.get("number"),
+                    repo_slug,
+                )
+                continue
+
             payload = {
                 "action": "labeled",
                 "label": {"name": triggered_label},
