@@ -1,0 +1,29 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "4096:4096"
+    volumes:
+      - git_repos:/workspace/git_repos
+      - .memory:/workspace/.memory
+    env_file:
+      - .env
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - git_repos:/workspace/git_repos
+    depends_on:
+      server:
+        condition: service_started
+    env_file:
+      - .env
+
+volumes:
+  git_repos:

@@ -282,6 +282,107 @@ case (type = issues &&
             - leave the issue open.
        }
 
+case (type = issues &&
+       action = labeled &&
+       labels contains: "orchestration:retry-failed")
+       {
+          ## Retry a failed pipeline step — infers which step to re-dispatch based on
+          ## the progression labels currently on the issue.
+
+          - postStatusUpdate("🔁 Orchestrator matched `orchestration:retry-failed` clause. Inferring failed step from current labels...")
+
+          ## Determine the last completed pipeline step by inspecting the issue's labels.
+          ## Check from most-advanced to least-advanced so the correct retry target is found.
+
+          - $all_issue_labels = the list of labels currently on this issue (from EVENT_DATA)
+
+          - if $all_issue_labels contains "orchestration:epic-reviewed" AND does NOT contain "orchestration:epic-complete":
+            ## Last completed: step 2 (review). Retry steps 3–4 (report-progress + debrief-and-document).
+            - postStatusUpdate("🔁 Detected failure after `review-epic-prs`. Re-dispatching steps 3–4: `report-progress` and `debrief-and-document`...")
+            - $retry_epic = extract_epic_from_title(title)
+            - if $retry_epic is null or empty:
+              - postStatusUpdate("❌ Could not parse epic identifier from issue title. Cannot retry.")
+              - skip to ##Final.
+            - remove label "orchestration:retry-failed" from the issue.
+            - postStatusUpdate("🤖 Step 3/4: Starting `report-progress` for epic: " + $retry_epic)
+            - /orchestrate-dynamic-workflow
+                $workflow_name = single-workflow { $workflow_assignment = report-progress, $epic = $retry_epic }
+            - if report-progress fails:
+              - postStatusUpdate("❌ Step 3/4 `report-progress` failed on retry for: " + $retry_epic + ". See workflow run logs.")
+              - skip to ##Final.
+            - postStatusUpdate("✅ Step 3/4: `report-progress` completed for: " + $retry_epic + ".")
+            - postStatusUpdate("🤖 Step 4/4: Starting `debrief-and-document` for epic: " + $retry_epic)
+            - /orchestrate-dynamic-workflow
+                $workflow_name = single-workflow { $workflow_assignment = debrief-and-document, $epic = $retry_epic }
+            - if debrief-and-document fails:
+              - postStatusUpdate("❌ Step 4/4 `debrief-and-document` failed on retry for: " + $retry_epic + ". See workflow run logs.")
+              - skip to ##Final.
+            - postStatusUpdate("✅ Steps 3-4 retry complete for: " + $retry_epic + ". Applying `orchestration:epic-complete` label.")
+            - apply label "orchestration:epic-complete" to the issue.
+
+          - else if $all_issue_labels contains "orchestration:epic-implemented" AND does NOT contain "orchestration:epic-reviewed":
+            ## Last completed: step 1 (implement). Retry step 2 (review-epic-prs).
+            - postStatusUpdate("🔁 Detected failure after `implement-epic`. Re-dispatching step 2: `review-epic-prs`...")
+            - $retry_epic = extract_epic_from_title(title)
+            - if $retry_epic is null or empty:
+              - postStatusUpdate("❌ Could not parse epic identifier from issue title. Cannot retry.")
+              - skip to ##Final.
+            - remove label "orchestration:retry-failed" from the issue.
+            - postStatusUpdate("🤖 Step 2/4: Starting `review-epic-prs` for epic: " + $retry_epic)
+            - /orchestrate-dynamic-workflow
+                $workflow_name = review-epic-prs { $epic = $retry_epic }
+            - if review-epic-prs succeeds:
+              - postStatusUpdate("✅ Step 2/4: `review-epic-prs` retry completed for: " + $retry_epic + ". Applying `orchestration:epic-reviewed` label.")
+              - apply label "orchestration:epic-reviewed" to the issue.
+            - else → postStatusUpdate("❌ Step 2/4 `review-epic-prs` retry failed for: " + $retry_epic + ". See workflow run logs."), skip to ##Final.
+
+          - else if $all_issue_labels contains "orchestration:epic-ready" AND does NOT contain "orchestration:epic-implemented":
+            ## Last completed: epic creation. Retry step 1 (implement-epic).
+            - postStatusUpdate("🔁 Detected failure after `create-epic-v2`. Re-dispatching step 1: `implement-epic`...")
+            - $retry_epic = extract_epic_from_title(title)
+            - if $retry_epic is null or empty:
+              - postStatusUpdate("❌ Could not parse epic identifier from issue title. Cannot retry.")
+              - skip to ##Final.
+            - remove label "orchestration:retry-failed" from the issue.
+            - postStatusUpdate("🤖 Step 1/4: Starting `implement-epic` for epic: " + $retry_epic)
+            - /orchestrate-dynamic-workflow
+                $workflow_name = implement-epic { $epic = $retry_epic }
+            - if implement-epic succeeds:
+              - postStatusUpdate("✅ Step 1/4: `implement-epic` retry completed for: " + $retry_epic + ". Applying `orchestration:epic-implemented` label.")
+              - apply label "orchestration:epic-implemented" to the issue.
+            - else → postStatusUpdate("❌ Step 1/4 `implement-epic` retry failed for: " + $retry_epic + ". See workflow run logs."), skip to ##Final.
+
+          - else if $all_issue_labels contains "orchestration:plan-approved" AND does NOT contain "orchestration:epic-ready":
+            ## Plan approved but no epic created yet. Retry epic creation (create-epic-v2).
+            - postStatusUpdate("🔁 Detected failure after `orchestration:plan-approved`. Re-dispatching epic creation: `create-epic-v2`...")
+            - remove label "orchestration:retry-failed" from the issue.
+            - /orchestrate-dynamic-workflow
+                $workflow_name = create-epic-v2
+            - if create-epic-v2 succeeds:
+              - postStatusUpdate("✅ `create-epic-v2` retry completed. Applying `orchestration:epic-ready` label.")
+              - apply label "orchestration:epic-ready" to the issue.
+            - else → postStatusUpdate("❌ `create-epic-v2` retry failed. See workflow run logs."), skip to ##Final.
+
+          - else if $all_issue_labels contains "orchestration:dispatch" AND does NOT contain "orchestration:plan-approved":
+            ## Only dispatch label present. Retry the initial dispatch workflow (project-setup).
+            - postStatusUpdate("🔁 Detected failure at initial dispatch stage. Re-dispatching: `project-setup`...")
+            - $dispatch = parse_workflow_dispatch_body(body)
+            - if $dispatch is null:
+              - postStatusUpdate("❌ Could not parse dispatch body. Cannot retry.")
+              - skip to ##Final.
+            - remove label "orchestration:retry-failed" from the issue.
+            - /orchestrate-dynamic-workflow
+                $workflow_name = $dispatch.workflow_name { ...$dispatch.args }
+            - if the workflow succeeds:
+              - postStatusUpdate("✅ `" + $dispatch.workflow_name + "` retry completed successfully.")
+            - else:
+              - postStatusUpdate("❌ `" + $dispatch.workflow_name + "` retry failed. See workflow run logs.")
+
+          - else:
+            ## Cannot determine which step failed.
+            - postStatusUpdate("❌ `orchestration:retry-failed` was applied but the orchestrator could not determine which pipeline step to retry. Please check the issue labels and retry manually.\nCurrent labels: " + $all_issue_labels)
+       }
+
 case (default)
       {
         - postStatusUpdate("⚠️ Orchestrator: no clause matched for this event. Fell through to `(default)`. Event details printed to workflow log.")

@@ -46,3 +46,6 @@ class ServiceConfig(BaseSettings):
 
     eligibility_marker_path: str = "plan_docs"
     """Directory/file whose presence in a repo indicates it is eligible. Env var: ELIGIBILITY_MARKER_PATH."""
+
+    orchestration_template_repo: str = "workflow-orchestration-service-november18"
+    """Template repo name used for template-origin eligibility check. Env var: ORCHESTRATION_TEMPLATE_REPO."""

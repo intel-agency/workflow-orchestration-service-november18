@@ -27,6 +27,7 @@ def create_app(
     worktree_manager: WorktreeManager,
     dispatcher: Dispatcher,
     lifespan=None,
+    sentinel=None,
 ) -> FastAPI:
     """Build and return a FastAPI application instance.
 
@@ -123,6 +124,7 @@ def create_app(
             "status": "online",
             "service": "orchestration-client",
             "server_reachable": server_reachable,
+            "sentinel_running": sentinel.is_running if sentinel else False,
         }
 
     return app

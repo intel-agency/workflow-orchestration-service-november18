@@ -9,8 +9,10 @@ from fastapi import FastAPI
 
 from src.config import ServiceConfig
 from src.dispatcher import Dispatcher
+from src.eligibility_checker import EligibilityChecker
 from src.event_router import create_app
 from src.prompt_assembler import PromptAssembler
+from src.sentinel import Sentinel
 from src.worktree_manager import WorktreeManager
 
 logging.basicConfig(
@@ -27,16 +29,23 @@ def build_app() -> FastAPI:
     prompt_assembler = PromptAssembler(config)
     worktree_manager = WorktreeManager(config)
     dispatcher = Dispatcher(config)
+    eligibility_checker = EligibilityChecker(config)
+    sentinel = Sentinel(config, eligibility_checker, prompt_assembler, worktree_manager, dispatcher)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         await dispatcher.start()
         logger.info("Dispatcher started")
+        await sentinel.start()
+        logger.info("Sentinel started")
         yield
+        await sentinel.stop()
         await dispatcher.stop()
         logger.info("Dispatcher stopped")
+        await eligibility_checker.close()
+        await sentinel.close()
 
-    return create_app(config, prompt_assembler, worktree_manager, dispatcher, lifespan=lifespan)
+    return create_app(config, prompt_assembler, worktree_manager, dispatcher, lifespan=lifespan, sentinel=sentinel)
 
 
 app = build_app()
