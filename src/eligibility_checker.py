@@ -21,7 +21,6 @@ class EligibilityChecker:
     def __init__(self, config: ServiceConfig) -> None:
         self._config = config
         self._cache: dict[str, bool] = {}
-        self._poll_cycle: int = 0
         self._client = httpx.AsyncClient(
             headers={
                 **_AUTH_HEADERS,

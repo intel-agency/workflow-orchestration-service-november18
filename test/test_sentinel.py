@@ -177,6 +177,31 @@ def test_poll_once_does_nothing_when_no_items(config):
     dispatcher.dispatch.assert_not_awaited()
 
 
+def test_poll_once_selects_most_advanced_label(config):
+    sentinel, _, prompt_assembler, _, dispatcher = _make_sentinel(config)
+    multi_label_item = {
+        "number": 42,
+        "title": "Multi-label issue",
+        "body": "body text",
+        "labels": [
+            {"name": "orchestration:dispatch"},
+            {"name": "orchestration:plan-approved"},
+            {"name": "orchestration:epic-ready"},
+        ],
+        "repository_url": "https://api.github.com/repos/test-org/my-repo",
+    }
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=_mock_response(200, {"items": [multi_label_item]}))
+    mock_client.aclose = AsyncMock()
+    sentinel._client = mock_client
+
+    asyncio.run(sentinel._poll_once())
+
+    prompt_assembler.assemble.assert_called_once()
+    event = prompt_assembler.assemble.call_args[0][0]
+    assert event.triggered_label == "orchestration:epic-ready"
+
+
 # ---------------------------------------------------------------------------
 # Search query uses correct label list and proper URL encoding
 # ---------------------------------------------------------------------------

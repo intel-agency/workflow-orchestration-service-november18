@@ -134,6 +134,51 @@ def test_non_orchestration_label_returns_ignored(config):
     assert data["reason"] == "non-orchestration label"
 
 
+def test_push_event_returns_ignored(config):
+    client, _, _, _ = _make_client(config)
+    body = json.dumps({
+        "ref": "refs/heads/main",
+        "repository": {"full_name": "intel-agency/test"},
+        "sender": {"login": "nam20485"},
+    }).encode()
+    resp = client.post(
+        "/webhooks/github",
+        content=body,
+        headers={
+            "Content-Type": "application/json",
+            "X-GitHub-Event": "push",
+            "X-Hub-Signature-256": _sign(body),
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ignored"
+    assert data["reason"] == "unhandled event type"
+
+
+def test_issues_opened_returns_ignored(config):
+    client, _, _, _ = _make_client(config)
+    body = json.dumps({
+        "action": "opened",
+        "issue": {"number": 1, "title": "t", "body": "", "labels": []},
+        "repository": {"full_name": "intel-agency/test"},
+        "sender": {"login": "nam20485"},
+    }).encode()
+    resp = client.post(
+        "/webhooks/github",
+        content=body,
+        headers={
+            "Content-Type": "application/json",
+            "X-GitHub-Event": "issues",
+            "X-Hub-Signature-256": _sign(body),
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ignored"
+    assert data["reason"] == "unhandled event type"
+
+
 def test_bot_actor_returns_ignored(config):
     client, _, _, _ = _make_client(config)
     body = _labeled_payload(actor="traycerai[bot]")

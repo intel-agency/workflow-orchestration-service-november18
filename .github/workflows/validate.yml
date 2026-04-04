@@ -57,6 +57,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
+      packages: read
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -66,6 +67,13 @@ jobs:
       - name: Install dev tools
         shell: pwsh
         run: ./scripts/install-dev-tools.ps1
+
+      - name: Login to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run tests
         shell: pwsh

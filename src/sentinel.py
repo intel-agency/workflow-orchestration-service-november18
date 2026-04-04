@@ -21,6 +21,16 @@ logger = logging.getLogger(__name__)
 
 MAX_BACKOFF = 960  # 16 minutes
 
+_LABEL_PRIORITY: tuple[str, ...] = (
+    "orchestration:retry-failed",
+    "orchestration:epic-complete",
+    "orchestration:epic-reviewed",
+    "orchestration:epic-implemented",
+    "orchestration:epic-ready",
+    "orchestration:plan-approved",
+    "orchestration:dispatch",
+)
+
 
 class Sentinel:
     """Polls the GitHub Search API for eligible orchestration issues and dispatches them."""
@@ -165,10 +175,11 @@ class Sentinel:
                 lbl["name"] if isinstance(lbl, dict) else str(lbl)
                 for lbl in labels_raw
             ]
-            triggered_label = next(
-                (lbl for lbl in all_labels if lbl.startswith("orchestration:")),
-                "",
-            )
+            triggered_label = ""
+            for priority_label in _LABEL_PRIORITY:
+                if priority_label in all_labels:
+                    triggered_label = priority_label
+                    break
 
             payload = {
                 "action": "labeled",

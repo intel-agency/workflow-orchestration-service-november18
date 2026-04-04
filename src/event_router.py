@@ -20,6 +20,10 @@ from src.worktree_manager import WorktreeManager
 
 logger = logging.getLogger(__name__)
 
+_ALLOWED_EVENTS: frozenset[tuple[str, str]] = frozenset({
+    ("issues", "labeled"),
+})
+
 
 def create_app(
     config: ServiceConfig,
@@ -58,14 +62,16 @@ def create_app(
         payload: dict = json.loads(body)
         event_type = request.headers.get("X-GitHub-Event", "")
 
+        if (event_type, payload.get("action", "")) not in _ALLOWED_EVENTS:
+            return {"status": "ignored", "reason": "unhandled event type"}
+
         actor: str = payload.get("sender", {}).get("login", "")
         if actor == "traycerai[bot]":
             return {"status": "ignored", "reason": "bot actor"}
 
-        if event_type == "issues" and payload.get("action") == "labeled":
-            label_name: str = (payload.get("label") or {}).get("name", "")
-            if not label_name.startswith("orchestration:"):
-                return {"status": "ignored", "reason": "non-orchestration label"}
+        label_name: str = (payload.get("label") or {}).get("name", "")
+        if not label_name.startswith("orchestration:"):
+            return {"status": "ignored", "reason": "non-orchestration label"}
 
         try:
             event = OrchestrationEvent.from_webhook_payload(

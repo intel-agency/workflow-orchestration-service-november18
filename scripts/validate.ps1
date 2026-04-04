@@ -90,7 +90,7 @@ if ($Lint) {
     else { Skip-Check 'actionlint' 'Not installed (go install github.com/rhysd/actionlint/cmd/actionlint@latest)' }
 
     # hadolint — Dockerfile linter
-    $dockerfiles = @('.github/.devcontainer/Dockerfile', 'server/Dockerfile') | Where-Object { Test-Path $_ }
+    $dockerfiles = @('.github/.devcontainer/Dockerfile', 'server/Dockerfile', 'client/Dockerfile') | Where-Object { Test-Path $_ }
     if (Get-Command hadolint -ErrorAction SilentlyContinue) {
         if ($dockerfiles.Count -gt 0) {
             Invoke-Check 'hadolint' {
@@ -107,6 +107,7 @@ if ($Lint) {
     if (Test-Path 'test/*.sh') { $shellFiles += Get-Item test/*.sh }
     if (Test-Path 'run_opencode_prompt.sh') { $shellFiles += Get-Item run_opencode_prompt.sh }
     if (Test-Path 'scripts/start-opencode-server.sh') { $shellFiles += Get-Item scripts/start-opencode-server.sh }
+    if (Test-Path 'server/entrypoint.sh') { $shellFiles += Get-Item server/entrypoint.sh }
     if (Get-Command shellcheck -ErrorAction SilentlyContinue) {
         if ($shellFiles.Count -gt 0) {
             Invoke-Check 'shellcheck' {
