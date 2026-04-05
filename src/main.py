@@ -45,7 +45,7 @@ def build_app() -> FastAPI:
         await eligibility_checker.close()
         await sentinel.close()
 
-    return create_app(config, prompt_assembler, worktree_manager, dispatcher, lifespan=lifespan, sentinel=sentinel)
+    return create_app(config, prompt_assembler, worktree_manager, dispatcher, lifespan=lifespan, sentinel=sentinel, eligibility_checker=eligibility_checker)
 
 
 app = build_app()

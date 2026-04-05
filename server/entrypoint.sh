@@ -8,6 +8,18 @@ set -euo pipefail
 
 OPENCODE_SERVER_PIDFILE="${OPENCODE_SERVER_PIDFILE:-/tmp/opencode-serve.pid}"
 
+if [[ -z "${ZHIPU_API_KEY:-}" ]]; then
+    echo "::error::ZHIPU_API_KEY is not set — this is required for opencode to call the ZhipuAI model API" >&2
+    echo "::error::Set ZHIPU_API_KEY as an environment variable or in the .env file before starting the container" >&2
+    exit 1
+fi
+
+if [[ -z "${GH_ORCHESTRATION_AGENT_TOKEN:-}" ]]; then
+    echo "::error::GH_ORCHESTRATION_AGENT_TOKEN is not set — orchestrator execution requires this token" >&2
+    echo "::error::Configure it as an org or repo secret with scopes: repo, workflow, project, read:org" >&2
+    exit 1
+fi
+
 # Run the bootstrapper — exits 0 only when opencode serve is ready on its port.
 bash scripts/start-opencode-server.sh
 

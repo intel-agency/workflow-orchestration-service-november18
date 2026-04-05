@@ -299,3 +299,59 @@ def test_graceful_shutdown_after_stop(config):
             assert sentinel.is_running is False
 
     asyncio.run(_run())
+
+
+# ---------------------------------------------------------------------------
+# Server health check gate
+# ---------------------------------------------------------------------------
+
+
+def test_poll_once_skips_when_server_unreachable(config):
+    import httpx
+
+    sentinel, _, _, worktree_manager, dispatcher = _make_sentinel(config)
+
+    search_resp = _mock_response(200, {"items": [_issue_item()]})
+
+    call_count = 0
+
+    async def _get_side_effect(url, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if "api.github.com" in url:
+            return search_resp
+        raise httpx.ConnectError("Connection refused")
+
+    mock_client = AsyncMock()
+    mock_client.get = _get_side_effect
+    mock_client.aclose = AsyncMock()
+    sentinel._client = mock_client
+
+    asyncio.run(sentinel._poll_once())
+
+    dispatcher.dispatch.assert_not_awaited()
+    worktree_manager.ensure_ready.assert_not_awaited()
+
+
+def test_poll_once_skips_when_server_returns_500(config):
+    sentinel, _, _, worktree_manager, dispatcher = _make_sentinel(config)
+
+    search_resp = _mock_response(200, {"items": [_issue_item()]})
+    server_error_resp = _mock_response(500)
+
+    async def _get_side_effect(url, **kwargs):
+        if "api.github.com" in url:
+            return search_resp
+        if url == config.opencode_server_url:
+            return server_error_resp
+        return _mock_response(200)
+
+    mock_client = AsyncMock()
+    mock_client.get = _get_side_effect
+    mock_client.aclose = AsyncMock()
+    sentinel._client = mock_client
+
+    asyncio.run(sentinel._poll_once())
+
+    dispatcher.dispatch.assert_not_awaited()
+    worktree_manager.ensure_ready.assert_not_awaited()

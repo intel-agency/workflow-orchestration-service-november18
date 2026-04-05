@@ -10,6 +10,7 @@ import httpx
 
 from src.config import ServiceConfig
 from src.models.event import OrchestrationEvent
+from src.models.security import scrub_secrets
 
 if TYPE_CHECKING:
     from src.dispatcher import Dispatcher
@@ -221,15 +222,30 @@ class Sentinel:
                 triggered_label,
             )
             try:
+                health_resp = await self._client.get(self._config.opencode_server_url, timeout=3.0)
+                if health_resp.status_code >= 500:
+                    logger.warning(
+                        "Server unreachable at %s — skipping poll cycle",
+                        self._config.opencode_server_url,
+                    )
+                    return
+            except Exception:
+                logger.warning(
+                    "Server unreachable at %s — skipping poll cycle",
+                    self._config.opencode_server_url,
+                )
+                return
+            try:
                 worktree_path = self._worktree_manager.resolve(event)
                 await self._worktree_manager.ensure_ready(worktree_path, event.repo_slug)
                 prompt_path = self._prompt_assembler.assemble(event)
                 await self._dispatcher.dispatch(prompt_path, worktree_path)
-            except Exception:
+            except Exception as exc:
                 logger.exception(
-                    "Dispatch failed for issue #%d in %s",
+                    "Dispatch failed for issue #%d in %s: %s",
                     event.issue_number,
                     event.repo_slug,
+                    scrub_secrets(str(exc)),
                 )
 
             # One issue per poll cycle

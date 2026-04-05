@@ -256,3 +256,36 @@ def test_event_construction_uses_from_webhook_payload(config):
     call_kwargs = mock_factory.call_args
     assert call_kwargs.kwargs.get("event_type") == "issues"
     assert "raw_payload_str" in call_kwargs.kwargs
+
+
+# ---------------------------------------------------------------------------
+# Eligibility gate
+# ---------------------------------------------------------------------------
+
+
+def test_ineligible_repo_returns_ignored(config):
+    from src.event_router import create_app
+
+    prompt_assembler, worktree_manager, dispatcher = _make_components(config)
+    mock_checker = MagicMock()
+    mock_checker.is_eligible = AsyncMock(return_value=False)
+
+    app = create_app(config, prompt_assembler, worktree_manager, dispatcher, eligibility_checker=mock_checker)
+    client = TestClient(app)
+
+    body = _labeled_payload()
+    resp = client.post(
+        "/webhooks/github",
+        content=body,
+        headers={
+            "Content-Type": "application/json",
+            "X-GitHub-Event": "issues",
+            "X-Hub-Signature-256": _sign(body),
+        },
+    )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "ignored"
+    assert data["reason"] == "ineligible repo"
+    dispatcher.dispatch.assert_not_awaited()

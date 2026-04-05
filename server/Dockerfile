@@ -13,6 +13,8 @@ COPY server/entrypoint.sh /workspace/server/entrypoint.sh
 COPY run_opencode_prompt.sh /workspace/run_opencode_prompt.sh
 COPY .github/workflows/prompts/orchestrator-agent-prompt.md /opt/orchestration/prompts/orchestrator-agent-prompt.md
 
+RUN chmod +x scripts/start-opencode-server.sh server/entrypoint.sh run_opencode_prompt.sh
+
 RUN mkdir -p /workspace/git_repos
 
 EXPOSE 4096

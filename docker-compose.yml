@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: server/Dockerfile
+    restart: unless-stopped
     ports:
       - "4096:4096"
     volumes:
@@ -15,6 +16,7 @@ services:
     build:
       context: .
       dockerfile: client/Dockerfile
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:

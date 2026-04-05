@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from src.config import ServiceConfig
 from src.dispatcher import Dispatcher
 from src.models.event import OrchestrationEvent
+from src.models.security import scrub_secrets
 from src.prompt_assembler import PromptAssembler
 from src.worktree_manager import WorktreeManager
 
@@ -32,6 +33,7 @@ def create_app(
     dispatcher: Dispatcher,
     lifespan=None,
     sentinel=None,
+    eligibility_checker=None,
 ) -> FastAPI:
     """Build and return a FastAPI application instance.
 
@@ -73,6 +75,16 @@ def create_app(
         if not label_name.startswith("orchestration:"):
             return {"status": "ignored", "reason": "non-orchestration label"}
 
+        repo_slug = payload.get("repository", {}).get("full_name", "")
+        if eligibility_checker is not None:
+            try:
+                eligible = await eligibility_checker.is_eligible(repo_slug)
+            except Exception:
+                logger.warning("Eligibility check failed for %s — proceeding with dispatch", repo_slug)
+                eligible = True
+            if not eligible:
+                return {"status": "ignored", "reason": "ineligible repo"}
+
         try:
             event = OrchestrationEvent.from_webhook_payload(
                 payload,
@@ -110,7 +122,7 @@ def create_app(
                     "Background dispatch failed for issue %s in %s: %s",
                     event.issue_number,
                     event.repo_slug,
-                    t.exception(),
+                    scrub_secrets(str(t.exception())),
                 )
 
         task.add_done_callback(_on_done)
